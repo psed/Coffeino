@@ -1,7 +1,5 @@
-// include the library code:
 #include <LiquidCrystal.h>
 
-// initialize the library with the numbers of the interface pins
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 int shotSize = 30;
 int pumpRelay = 22;
