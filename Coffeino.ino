@@ -1,86 +1,70 @@
-#include <LiquidCrystal.h>
+bool doBrewing;
+bool brewDouble;
 
-LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
-int shotSize = 30;
-int pumpRelay = 22;
-int heaterRelay = 24;
+int pumpRelay = 4;
+int heaterRelay = 5;
+int makeSingleShotButton = 2;
+int makeDoubleShotButton = 3;
+int shotSizePotentiometer = 1;
 
-void setup() {
+void setup() 
+{
   pinMode(pumpRelay, OUTPUT);
-  digitalWrite(pumpRelay, HIGH);
-  lcd.begin(16, 2);
-  lcd.setCursor(0,0);
-  lcd.print("    SHOT SIZE");
+  pinMode(heaterRelay, OUTPUT);
+  pinMode(makeSingleShotButton, INPUT);
+  pinMode(makeDoubleShotButton, INPUT);
+  pinMode(shotSizePotentiometer, INPUT);
+
+  attachInterrupt(digitalPinToInterrupt(makeSingleShotButton), makeSingleShot, RISING);
+  attachInterrupt(digitalPinToInterrupt(makeDoubleShotButton), makeDoubleShot, RISING);
+
+  doBrewing = false;
+  
+  Serial.begin(9600);
 }
 
 void loop() {
-  readKeys();
-  String shotSizeString = String(shotSize);
-  int shotSizeStringSize = shotSizeString.length();
-  int cursorPosition = (9 - shotSizeStringSize);
-  lcd.setCursor(cursorPosition,1);
-  lcd.print(shotSize);
+  if (doBrewing)
+  {
+    brew(brewDouble);
+  }
 }
 
-void readKeys() {
-    int x;
-    x = analogRead(0);
-    if (x < 60) {
-    }
-    else if (x < 200) {
-      
-      if (shotSize < 200) 
-      {
-        shotSize = shotSize + 10;
-        delay(100);
-        clearLine(1);
-      }
-      else
-      {
-        shotSize = 200;        
-      }
-    }
-    else if (x < 400){
-      if (shotSize > 20) 
-      {
-        shotSize = shotSize - 10;
-        delay(100);
-        clearLine(1);
-      }
-      else
-      {
-        shotSize = 20;
-      }
-    }
-    else if (x < 600){
-      lcd.print ("Left  ");
-    }
-    else if (x < 800){
-      brew();
-    }
-}
-
-void brew()
+void makeSingleShot()
 {
-  clearScreen();
-  lcd.setCursor(0,0);
-  lcd.print ("    BREWING...");
+  Serial.println("Single shot button pressed...");
+  if(!doBrewing)
+  {
+    brewDouble = false;
+    doBrewing = true;
+  }
+}
+
+void makeDoubleShot()
+{
+  Serial.println("Double shot button pressed...");
+  if(!doBrewing)
+  {
+    brewDouble = true;
+    doBrewing = true;
+  }
+}
+
+void brew(bool makeDoubleSizeShot)
+{
+  Serial.print("Making shot");
+  int shotSize = analogRead(shotSizePotentiometer) / 10;
+  
+  if(makeDoubleSizeShot)
+  {
+    shotSize = shotSize * 2;
+  }
+  
+  Serial.print("Shot size = ");Serial.println(shotSize * 10);
   digitalWrite(pumpRelay, LOW);
-  delay(shotSize * 50);
+  delay(shotSize * 100);
   digitalWrite(pumpRelay, HIGH);
-  clearLine(0);
-  lcd.setCursor(0,0);
-  lcd.print("    SHOT SIZE");
+  Serial.println("Brewed!");
+  doBrewing = false;
 }
 
-void clearScreen() 
-{
-  clearLine(0);
-  clearLine(1);
-}
-
-void clearLine(int lineNumber)
-{
-  lcd.setCursor(0, lineNumber);
-  lcd.print("                ");
-}
